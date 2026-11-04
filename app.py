@@ -1,31 +1,36 @@
-# 📋 app.py · [실습 2-1] AI 용어 설명기 ① — client 만들기 · 키 확인 (요청 없음)
-import streamlit as st
-from google import genai
-from google.genai import types
+# ============================================================
+# [실습 5-1] 퀴즈 JSON 먼저 눈으로 보기 — Colab 에서 실행 (요청 1번)
+# ------------------------------------------------------------
+# client 는 실습 0-1 셀에서 만든 것을 그대로 씁니다 (런타임이 끊겼으면 0-1 부터 다시)
+# ============================================================
+import json
 
-MODEL_NAME = "gemini-3.5-flash-lite"
+# 문제 하나 = 질문 · 보기 4개 · 정답 번호(0~3) · 해설
+QUIZ_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "questions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "question": {"type": "string"},
+                    "choices": {"type": "array", "items": {"type": "string"}, "description": "보기 4개"},
+                    "answer_index": {"type": "integer", "description": "정답 보기의 번호 (0부터 셈)"},
+                    "explanation": {"type": "string", "description": "정답 해설 한 문장"},
+                },
+                "required": ["question", "choices", "answer_index", "explanation"],
+            },
+        }
+    },
+    "required": ["questions"],
+}
 
-
-# ---------- ① client 만들기 : 키는 st.secrets 에서 읽음 (코드에 적지 않음) ----------
-@st.cache_resource                          # 처음 한 번만 만들고, 다시 실행될 때는 만들어 둔 것을 그대로 씀
-def get_client():
-    """Gemini client 를 만들어 돌려준다"""
-    return genai.Client(
-        api_key=st.secrets["GEMINI_API_KEY"],
-        http_options=types.HttpOptions(
-            timeout=120_000,                                   # 2분 안에 답이 없으면 멈춤
-            retry_options=types.HttpRetryOptions(http_status_codes=[500, 503]),   # 429 는 말없이 기다리지 않게
-        ),
-    )
-
-
-# ---------- 키가 있는지 먼저 확인 ----------
-try:
-    client = get_client()
-except Exception:
-    st.error("🔑 GEMINI_API_KEY 를 찾지 못했습니다 — Manage app → ⋮ → Settings → Secrets 칸을 확인하세요.")
-    st.stop()                               # 여기서 화면 그리기를 멈춤
-
-# ---------- 화면 ----------
-st.title("📝 AI 용어 설명기")
-st.success("🔑 키를 찾았습니다 — client 준비 완료 (아직 요청은 보내지 않음)")
+reply = client.interactions.create(
+    model="gemini-3.5-flash-lite",
+    store=False,
+    input="주제 '파이썬 리스트' 에 대해 쉬움 난이도 문제 2개를 만들어 줘.",
+    response_format={"type": "text", "mime_type": "application/json", "schema": QUIZ_SCHEMA},
+)
+quiz = json.loads(reply.output_text)                      # JSON 글 → 파이썬 딕셔너리
+print(json.dumps(quiz, ensure_ascii=False, indent=2))     # 보기 좋게 찍기
