@@ -56,16 +56,48 @@ except Exception:
 st.title("⚖️ AI 토론장")
 
 # ---------- ① 사이드바 — 토론 준비 ----------
+def build_prompt(stance, name, topic, style):
+    return f"""너는 토론 대회의 {stance} 측 토론자
+'{name}' 이야. 토론 주제는 '{topic}' 이야.
+규칙 1. 항상 {stance} 입장을 지킨다.
+규칙 2. … 먼저 한 문장으로 반박 …
+규칙 3. {style} 말투로 3문장 이내로 …"""
+
+with st.sidebar:
+    topic = st.text_input("토론 주제", value="…")
+    pro_style = st.text_input("🟦 찬성봇 말투", …)
+    rounds = st.slider("라운드", 1, 5, 3)
+    st.caption(f"… = {2 + 2 * rounds}번")
+    start = st.button("▶ 토론 시작")
 
 
 # ---------- ② 토론 진행 ----------
+if start:
+    st.session_state.lines = []                         # 새 토론 → 보관함 비우기
+    def speak(name, history, prompt, heard):
+        with st.chat_message(name, avatar=AVATARS[name]):   # 🟦 · 🟥 아이콘
+            with st.spinner(f"{name} 생각 중..."):
+                said = debate_turn(history, prompt, heard)  # 11주차 함수 그대로
+            st.markdown(said)
+        st.session_state.lines.append((name, said))         # 다시 그리기용으로 보관
+        return said
+
+    pro_said = speak("찬성봇", pro_history, pro_prompt, START_LINE)
+    for round_number in range(1, rounds + 1):
+        con_said = speak("반대봇", con_history, con_prompt, pro_said)
+        pro_said = speak("찬성봇", pro_history, pro_prompt, con_said)
 
 
 # ---------- ④ 판정 보여 주기 ----------
 # 🧪 [실습 6-1] Colab 안에서 1라운드 토론 (요청 1 + 2 × 1 + 심판 1 = 4번)
-app_test = open_app()
-app_test.sidebar.slider[0].set_value(1).run()  # 라운드 1
-app_test.sidebar.button[0].click().run()       # [▶ 토론 시작]
-for name, said in app_test.session_state["lines"]:
-    print(f"{name} : {said}\n")
-print("판정 :", app_test.session_state["verdict"] or (app_test.error[0].value if app_test.error else ""))
+        judge = client.interactions.create(model=MODEL_NAME, store=False,      # 11주차 실습 7-4 와 같음
+            system_instruction=JUDGE_PROMPT, input="…<토론>\n" + transcript + "\n</토론>",
+            response_format={"type": "text", "mime_type": "application/json", "schema": JUDGE_SCHEMA})
+        st.session_state.verdict = json.loads(judge.output_text)
+else:                                                  # 버튼을 안 누른 다시 실행 → 요청 없이 다시 그림
+    for name, said in st.session_state.lines:
+        st.chat_message(name, avatar=AVATARS[name]).markdown(said)
+
+left, right = st.columns([1, 3])
+left.metric("승리", verdict["winner"])
+
