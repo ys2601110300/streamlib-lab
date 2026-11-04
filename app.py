@@ -62,3 +62,10 @@ st.title("⚖️ AI 토론장")
 
 
 # ---------- ④ 판정 보여 주기 ----------
+# 🧪 [실습 6-1] Colab 안에서 1라운드 토론 (요청 1 + 2 × 1 + 심판 1 = 4번)
+app_test = open_app()
+app_test.sidebar.slider[0].set_value(1).run()  # 라운드 1
+app_test.sidebar.button[0].click().run()       # [▶ 토론 시작]
+for name, said in app_test.session_state["lines"]:
+    print(f"{name} : {said}\n")
+print("판정 :", app_test.session_state["verdict"] or (app_test.error[0].value if app_test.error else ""))
