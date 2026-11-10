@@ -65,7 +65,7 @@ def build_prompt(stance, name, topic, style):
 
 with st.sidebar:
     topic = st.text_input("토론 주제", value="…")
-    pro_style = st.text_input("🟦 찬성봇 말투", …)
+    pro_style = st.text_input("🟦 찬성봇 말투", )
     rounds = st.slider("라운드", 1, 5, 3)
     st.caption(f"… = {2 + 2 * rounds}번")
     start = st.button("▶ 토론 시작")
