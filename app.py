@@ -8,9 +8,9 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from streamlit.errors import StreamlitSecretNotFoundError
 
 
-EXAMPLE_IMAGE = Path(__file__).with_name("example-fridge.jpg")
-DEFAULT_TITLE = "냉장고 요리 추천"
-DEFAULT_ICON = "🥘"
+EXAMPLE_IMAGE = Path(__file__).with_name("example-sorting.jpg")
+DEFAULT_TITLE = "사진 분리수거 도우미"
+DEFAULT_ICON = "♻️"
 
 
 def read_secret(name: str, default: str = "") -> str:
@@ -96,7 +96,7 @@ title = (info or {}).get("name") or DEFAULT_TITLE
 icon = (info or {}).get("icon") or DEFAULT_ICON
 st.set_page_config(page_title=title, page_icon=icon)
 st.title(f"{icon} {title}")
-description = (info or {}).get("description") or "냉장고 사진에서 보이는 재료로 만들 수 있는 요리를 찾아요."
+description = (info or {}).get("description") or "사진 속 물건의 재질을 알아보고 분리배출 방법을 확인하세요."
 st.caption(description)
 
 if info is None:
@@ -107,7 +107,7 @@ if not access_code:
     st.info("사진 분석을 하려면 Streamlit Secrets에 APP_ACCESS_CODE를 설정해 주세요.")
 
 st.caption("얼굴, 신분증, 카드 번호가 보이는 사진은 올리지 마세요.")
-camera = st.camera_input("냉장고 사진 찍기") if st.toggle("카메라 켜기") else None
+camera = st.camera_input("분리수거할 물건 찍기") if st.toggle("카메라 켜기") else None
 upload = st.file_uploader("사진 파일 올리기", type=["jpg", "jpeg", "png", "webp"])
 photo = camera if camera is not None else upload
 
@@ -124,8 +124,8 @@ if st.button("사진 분석하기", key="analyze", type="primary", disabled=jpeg
     with st.spinner("사진을 분석하는 중입니다."):
         analyze_photo(jpeg, api_url, access_code, info["fields"])
 
-if EXAMPLE_IMAGE.is_file() and st.button("예시 사진으로 해 보기", key="sample", disabled=not access_code):
+if EXAMPLE_IMAGE.is_file() and st.button("예시 그림 분석하기", key="sample", disabled=not access_code):
     example_jpeg = resize_photo(EXAMPLE_IMAGE.read_bytes())
-    st.image(example_jpeg, width=320, caption="예시 사진")
-    with st.spinner("예시 사진을 분석하는 중입니다."):
+    st.image(example_jpeg, width=320, caption="예시 그림")
+    with st.spinner("예시 그림을 분석하는 중입니다."):
         analyze_photo(example_jpeg, api_url, access_code, info["fields"])
